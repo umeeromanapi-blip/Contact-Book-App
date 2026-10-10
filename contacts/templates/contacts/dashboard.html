@@ -1,0 +1,218 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics &amp; Insights Dashboard | Contact Book</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'contacts/style.css' %}">
+</head>
+<body>
+    <div class="ambient-glow glow-top-left" aria-hidden="true"></div>
+    <div class="ambient-glow glow-bottom-right" aria-hidden="true"></div>
+
+    <div class="app-wrapper dashboard-wrapper">
+        <header class="app-header">
+            <div class="header-brand">
+                <a href="{% url 'contact_list' %}" class="btn-back" title="Return to Directory">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Directory</span>
+                </a>
+                <div class="brand-text">
+                    <h1 class="brand-title">Analytics &amp; Insights</h1>
+                    <p class="brand-subtitle">Visual directory metrics, distribution meters &amp; audit history</p>
+                </div>
+            </div>
+
+            <div class="header-meta">
+                <a href="{% url 'contact_export_csv' %}" class="btn btn-header-action">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Export CSV</span>
+                </a>
+
+                <button type="button" class="btn-theme-toggle" id="theme-toggle-btn" aria-label="Toggle Theme">
+                    <span class="theme-icon theme-icon-dark">🌙</span>
+                    <span class="theme-icon theme-icon-light">☀️</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- 1. Key Performance KPI Cards -->
+            <section class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon-pill kpi-indigo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-label">Total Contacts</span>
+                        <h3 class="kpi-value">{{ total_contacts }}</h3>
+                        <span class="kpi-sub">Indexed in SQLite</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon-pill kpi-amber">
+                        <span>⭐</span>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-label">Starred Ratio</span>
+                        <h3 class="kpi-value">{{ fav_pct }}%</h3>
+                        <span class="kpi-sub">{{ favorite_contacts }} favorite contact{{ favorite_contacts|pluralize }}</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon-pill kpi-cyan">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-label">Email Coverage</span>
+                        <h3 class="kpi-value">{{ email_pct }}%</h3>
+                        <span class="kpi-sub">{{ with_email }} contacts with email</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon-pill kpi-rose">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                        </svg>
+                    </div>
+                    <div class="kpi-data">
+                        <span class="kpi-label">Detailed Notes</span>
+                        <h3 class="kpi-value">{{ notes_pct }}%</h3>
+                        <span class="kpi-sub">{{ with_notes }} with memos/notes</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Middle Row: Category Distributions & Recently Added -->
+            <section class="dashboard-two-col">
+                <!-- Category Distribution Meters -->
+                <div class="panel-card chart-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">Category Distribution</h2>
+                            <p class="panel-desc">Visual breakdown across contact groupings</p>
+                        </div>
+                    </div>
+
+                    <div class="distribution-meters-list">
+                        {% for cat in category_stats %}
+                        <div class="meter-item">
+                            <div class="meter-header">
+                                <span class="meter-label badge-category badge-cat-{{ cat.key }}">{{ cat.label }}</span>
+                                <span class="meter-counts">{{ cat.count }} ({{ cat.pct }}%)</span>
+                            </div>
+                            <div class="meter-bar-track">
+                                <div class="meter-bar-fill cat-avatar-{{ cat.key }}" style="width: {{ cat.pct }}%;"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Recently Added Contacts -->
+                <div class="panel-card chart-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">Recently Added</h2>
+                            <p class="panel-desc">Latest contacts with vCard shortcuts</p>
+                        </div>
+                    </div>
+
+                    <div class="recent-contacts-mini-list">
+                        {% if recent_contacts %}
+                            {% for contact in recent_contacts %}
+                            <div class="recent-mini-row">
+                                <div class="recent-mini-left">
+                                    <div class="contact-avatar cat-avatar-{{ contact.category }} mini-avatar">
+                                        <span>{{ contact.name|slice:':1'|upper }}</span>
+                                    </div>
+                                    <div class="recent-mini-info">
+                                        <strong>{{ contact.name }}</strong>
+                                        <span>{{ contact.phone }}</span>
+                                    </div>
+                                </div>
+                                <div class="recent-mini-right">
+                                    <a href="{% url 'contact_export_vcard' contact.id %}" class="btn-vcard-pill" title="Download vCard for Phone Import">
+                                        📲 .vcf
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="empty-desc">No contacts added yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Bottom Row: Activity Audit Trail -->
+            <section class="panel-card audit-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">Activity Audit Trail</h2>
+                        <p class="panel-desc">Real-time log of contact additions, updates, imports, and deletions</p>
+                    </div>
+                </div>
+
+                <div class="audit-timeline">
+                    {% if recent_activities %}
+                        {% for log in recent_activities %}
+                        <div class="timeline-item">
+                            <div class="timeline-dot dot-{{ log.action }}"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <span class="timeline-action badge-act-{{ log.action }}">{{ log.get_action_display }}</span>
+                                    <span class="timeline-time">{{ log.created_at|date:"M d, Y H:i:s" }}</span>
+                                </div>
+                                <p class="timeline-desc">{{ log.description }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="empty-desc">No activity logs recorded yet.</p>
+                    {% endif %}
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggleBtn = document.getElementById('theme-toggle-btn');
+            const savedTheme = localStorage.getItem('cb_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', next);
+                    localStorage.setItem('cb_theme', next);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

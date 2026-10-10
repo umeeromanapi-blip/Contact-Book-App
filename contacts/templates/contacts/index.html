@@ -1,0 +1,1053 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Contact Book App - Modern contact management system with categories, bulk actions, CSV import/export, and REST API.">
+    <meta name="theme-color" content="#0b0f19">
+    <title>Contact Book | Enterprise Contact Manager (Epic 3)</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{% static 'contacts/style.css' %}">
+</head>
+<body>
+    <!-- Background Ambient Glow Accents -->
+    <div class="ambient-glow glow-top-left" aria-hidden="true"></div>
+    <div class="ambient-glow glow-bottom-right" aria-hidden="true"></div>
+
+    <div class="app-wrapper">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="brand-icon-wrapper">
+                    <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <div class="title-row">
+                        <h1 class="brand-title">Contact Book</h1>
+                        <span class="version-badge">v3.0 Pro</span>
+                    </div>
+                    <p class="brand-subtitle">Categories, bulk workflows, REST API, &amp; data exchange</p>
+                </div>
+            </div>
+
+            <div class="header-meta">
+                <!-- Count Stats -->
+                <div class="stats-badge" title="Total contacts in SQLite">
+                    <span class="status-indicator-dot" aria-hidden="true"></span>
+                    <span class="stats-count">{{ total_contacts }}</span>
+                    <span class="stats-label">Total</span>
+                </div>
+
+                <div class="stats-badge favorites-badge" title="Starred favorite contacts">
+                    <span class="star-icon-small">⭐</span>
+                    <span class="stats-count">{{ favorite_count }}</span>
+                    <span class="stats-label">Starred</span>
+                </div>
+
+                <!-- Action Toolbar in Header -->
+                <div class="header-actions-group">
+                    <!-- Import CSV Trigger -->
+                    <button type="button" class="btn btn-header-action" id="open-import-modal-btn" title="Bulk Import Contacts from CSV">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>Import</span>
+                    </button>
+
+                    <!-- Export CSV -->
+                    <a href="{% url 'contact_export_csv' %}" class="btn btn-header-action" title="Export All Contacts to CSV">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Export</span>
+                    </a>
+
+                    <!-- REST API Info Trigger -->
+                    <button type="button" class="btn btn-header-action" id="open-api-modal-btn" title="View REST API Documentation">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                        <span>API</span>
+                    </button>
+
+                    <!-- Analytics Dashboard (Epic 4) -->
+                    <a href="{% url 'analytics_dashboard' %}" class="btn btn-header-action" title="View Visual Analytics & Insights">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 20V10M12 20V4M6 20v-6"></path>
+                        </svg>
+                        <span>Insights</span>
+                    </a>
+
+                    <!-- User Authentication (Epic 4) -->
+                    {% if user.is_authenticated %}
+                    <div class="user-status-pill">
+                        <span class="user-dot"></span>
+                        <span class="username-text" title="Logged in as {{ user.username }}">{{ user.username }}</span>
+                        <a href="{% url 'user_logout' %}" class="btn-logout-link" title="Sign out">Log out</a>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'user_login' %}" class="btn btn-header-action" title="Sign in to your private vault">
+                        <span>Sign In</span>
+                    </a>
+                    <a href="{% url 'user_demo_login' %}" class="btn btn-demo-quick" title="Instant 1-Click Demo Login">
+                        <span>⚡ Demo</span>
+                    </a>
+                    {% endif %}
+
+                    <!-- Theme Switcher Toggle -->
+                    <button type="button" class="btn-theme-toggle" id="theme-toggle-btn" aria-label="Toggle Dark / Light Theme" title="Toggle Theme">
+                        <span class="theme-icon theme-icon-dark">🌙</span>
+                        <span class="theme-icon theme-icon-light">☀️</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Django Messages / Notifications -->
+        {% if messages %}
+        <section class="messages-container" aria-label="Notifications" id="notification-area">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">
+                <div class="alert-content">
+                    {% if message.tags == 'success' %}
+                    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {% else %}
+                    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    {% endif %}
+                    <span class="alert-text">{{ message }}</span>
+                </div>
+                <button type="button" class="alert-close-btn" onclick="this.parentElement.remove()" aria-label="Dismiss message">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        <!-- Main Content Grid -->
+        <main class="main-layout-grid">
+            <!-- Left Column: Add Contact Form Card -->
+            <section class="panel-card form-panel" aria-labelledby="form-heading">
+                <div class="panel-header">
+                    <div class="panel-icon-pill">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 id="form-heading" class="panel-title">Add New Contact</h2>
+                        <p class="panel-desc">Create and categorize contacts with metadata</p>
+                    </div>
+                </div>
+
+                <form method="POST" action="{% url 'contact_list' %}" class="contact-form" id="contact-form" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Form Field: Name -->
+                    <div class="form-group {% if form.name.errors %}has-error{% endif %}">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">
+                            Full Name <span class="required-indicator">*</span>
+                        </label>
+                        <div class="input-container">
+                            <div class="input-icon-left" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            {{ form.name }}
+                        </div>
+                        {% if form.name.errors %}
+                        <div class="field-error-message" role="alert">
+                            {% for error in form.name.errors %}<span>{{ error }}</span>{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Form Field: Phone -->
+                    <div class="form-group {% if form.phone.errors %}has-error{% endif %}">
+                        <label for="{{ form.phone.id_for_label }}" class="form-label">
+                            Phone Number <span class="required-indicator">*</span>
+                        </label>
+                        <div class="input-container">
+                            <div class="input-icon-left" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                </svg>
+                            </div>
+                            {{ form.phone }}
+                        </div>
+                        {% if form.phone.errors %}
+                        <div class="field-error-message" role="alert">
+                            {% for error in form.phone.errors %}<span>{{ error }}</span>{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Form Field: Email -->
+                    <div class="form-group {% if form.email.errors %}has-error{% endif %}">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            Email Address <span class="optional-indicator">(Optional)</span>
+                        </label>
+                        <div class="input-container">
+                            <div class="input-icon-left" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                </svg>
+                            </div>
+                            {{ form.email }}
+                        </div>
+                        {% if form.email.errors %}
+                        <div class="field-error-message" role="alert">
+                            {% for error in form.email.errors %}<span>{{ error }}</span>{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Form Field: Category (Epic 3) -->
+                    <div class="form-group {% if form.category.errors %}has-error{% endif %}">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">
+                            Category / Group
+                        </label>
+                        {{ form.category }}
+                    </div>
+
+                    <!-- Form Field: Notes (Epic 3) -->
+                    <div class="form-group {% if form.notes.errors %}has-error{% endif %}">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            Notes & Details <span class="optional-indicator">(Optional)</span>
+                        </label>
+                        {{ form.notes }}
+                    </div>
+
+                    <!-- Form Field: Favorite Checkbox -->
+                    <div class="form-group form-checkbox-group">
+                        <label for="{{ form.is_favorite.id_for_label }}" class="checkbox-label">
+                            {{ form.is_favorite }}
+                            <span>Mark as Favorite Contact ⭐</span>
+                        </label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="save-contact-btn">
+                            <span class="btn-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                </svg>
+                            </span>
+                            <span class="btn-text">Save Contact</span>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="panel-footer-note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <span>CSRF Protected &bull; Indexed in SQLite &bull; REST API Ready</span>
+                </div>
+            </section>
+
+            <!-- Right Column: Saved Contacts Directory -->
+            <section class="panel-card list-panel" aria-labelledby="list-heading">
+                <!-- Directory Header & Tabs -->
+                <div class="panel-header space-between-wrap">
+                    <div>
+                        <h2 id="list-heading" class="panel-title">Saved Contacts</h2>
+                        <p class="panel-desc">Manage, categorize, filter, and bulk-operate</p>
+                    </div>
+
+                    <!-- Main Filter Tabs (All vs Starred) -->
+                    <div class="directory-filter-tabs">
+                        <a href="?tab=all{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if sort_order %}&sort={{ sort_order }}{% endif %}" 
+                           class="filter-tab {% if active_tab != 'favorites' %}active{% endif %}">
+                            All ({{ total_contacts }})
+                        </a>
+                        <a href="?tab=favorites{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if sort_order %}&sort={{ sort_order }}{% endif %}" 
+                           class="filter-tab {% if active_tab == 'favorites' %}active{% endif %}">
+                            ⭐ Starred ({{ favorite_count }})
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Category Pills Filter Bar (Epic 3) -->
+                <nav class="category-pills-bar" aria-label="Filter by Category">
+                    <a href="?category=all{% if active_tab %}&tab={{ active_tab }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+                       class="cat-pill {% if not selected_category or selected_category == 'all' %}active{% endif %}">
+                        All Groups
+                    </a>
+                    {% for cat_key, cat_name in categories %}
+                    <a href="?category={{ cat_key }}{% if active_tab %}&tab={{ active_tab }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+                       class="cat-pill cat-pill-{{ cat_key }} {% if selected_category == cat_key %}active{% endif %}">
+                        {{ cat_name }}
+                    </a>
+                    {% endfor %}
+                </nav>
+
+                <!-- Search & Sort Toolbar -->
+                <div class="directory-toolbar">
+                    <div class="search-input-container">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input 
+                            type="text" 
+                            id="contact-search-input" 
+                            class="search-input" 
+                            placeholder="Search name, phone, email, notes..." 
+                            aria-label="Search contacts"
+                            value="{{ search_query }}"
+                            autocomplete="off"
+                        >
+                        <button type="button" id="clear-search-btn" class="clear-search-btn" aria-label="Clear search" {% if not search_query %}style="display: none;"{% endif %}>
+                            &times;
+                        </button>
+                    </div>
+
+                    <!-- Sort Select -->
+                    <div class="sort-container">
+                        <label for="sort-select" class="sort-label">Sort:</label>
+                        <select id="sort-select" class="sort-select" onchange="window.location.href=this.value;">
+                            <option value="?sort=newest&tab={{ active_tab }}&category={{ selected_category }}{% if search_query %}&q={{ search_query }}{% endif %}" {% if sort_order == 'newest' %}selected{% endif %}>Newest</option>
+                            <option value="?sort=oldest&tab={{ active_tab }}&category={{ selected_category }}{% if search_query %}&q={{ search_query }}{% endif %}" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest</option>
+                            <option value="?sort=name_asc&tab={{ active_tab }}&category={{ selected_category }}{% if search_query %}&q={{ search_query }}{% endif %}" {% if sort_order == 'name_asc' %}selected{% endif %}>Name (A–Z)</option>
+                            <option value="?sort=name_desc&tab={{ active_tab }}&category={{ selected_category }}{% if search_query %}&q={{ search_query }}{% endif %}" {% if sort_order == 'name_desc' %}selected{% endif %}>Name (Z–A)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Floating Bulk Action Bar (Epic 3) -->
+                <form method="POST" action="{% url 'contact_bulk_action' %}" id="bulk-action-form" class="bulk-action-bar" style="display: none;">
+                    {% csrf_token %}
+                    <div class="bulk-bar-content">
+                        <div class="bulk-selection-info">
+                            <span class="bulk-count-badge" id="bulk-selected-count">0</span>
+                            <span>Selected</span>
+                        </div>
+                        <div class="bulk-actions-buttons">
+                            <button type="submit" name="bulk_action" value="favorite" class="btn btn-bulk-action">
+                                ⭐ Star
+                            </button>
+                            <button type="submit" name="bulk_action" value="unfavorite" class="btn btn-bulk-action">
+                                ☆ Unstar
+                            </button>
+                            <button type="submit" name="bulk_action" value="delete" class="btn btn-bulk-action btn-bulk-danger" onclick="return confirm('Permanently delete all selected contacts?')">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Contact List Container -->
+                <div class="contacts-directory" id="contacts-directory">
+                    {% if contacts %}
+                        <!-- Select All Checkbox Row -->
+                        <div class="directory-select-all-row">
+                            <label class="checkbox-label select-all-label">
+                                <input type="checkbox" id="select-all-contacts" class="form-checkbox">
+                                <span>Select All on this page</span>
+                            </label>
+                        </div>
+
+                        <div class="contacts-grid" id="contacts-grid">
+                            {% for contact in contacts %}
+                            <article class="contact-card {% if contact.is_favorite %}is-favorite{% endif %} category-border-{{ contact.category }}" 
+                                     data-name="{{ contact.name|lower }}" 
+                                     data-phone="{{ contact.phone|lower }}" 
+                                     data-email="{{ contact.email|lower }}"
+                                     data-category="{{ contact.category }}"
+                                     data-notes="{{ contact.notes|lower }}"
+                                     data-favorite="{% if contact.is_favorite %}true{% else %}false{% endif %}"
+                                     id="contact-{{ contact.id }}">
+                                
+                                <div class="card-top-bar">
+                                    <!-- Bulk Selection Checkbox -->
+                                    <input type="checkbox" name="selected_contacts" value="{{ contact.id }}" form="bulk-action-form" class="form-checkbox contact-select-cb" aria-label="Select {{ contact.name }}">
+                                    
+                                    <!-- Category Badge (Epic 3) -->
+                                    <span class="badge-category badge-cat-{{ contact.category }}">
+                                        {{ contact.get_category_display }}
+                                    </span>
+
+                                    <!-- Favorite Star Button -->
+                                    <form method="POST" action="{% url 'contact_toggle_favorite' contact.id %}" class="star-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-star-toggle {% if contact.is_favorite %}starred{% endif %}" title="Toggle Star" aria-label="Toggle star">
+                                            {% if contact.is_favorite %}★{% else %}☆{% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div class="contact-card-main">
+                                    <!-- Dynamic Avatar based on Initial -->
+                                    <div class="contact-avatar cat-avatar-{{ contact.category }}" data-initial="{{ contact.name|slice:':1'|upper }}">
+                                        <span>{{ contact.name|slice:':1'|upper }}</span>
+                                    </div>
+                                    <div class="contact-info">
+                                        <h3 class="contact-name" title="{{ contact.name }}">{{ contact.name }}</h3>
+
+                                        <div class="contact-phone-row">
+                                            <svg class="contact-phone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                            </svg>
+                                            <span class="contact-phone-number">{{ contact.phone }}</span>
+                                        </div>
+
+                                        {% if contact.email %}
+                                        <div class="contact-email-row">
+                                            <svg class="contact-email-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                                <polyline points="22,6 12,13 2,6"></polyline>
+                                            </svg>
+                                            <span class="contact-email-address">{{ contact.email }}</span>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if contact.notes %}
+                                        <p class="contact-notes-snippet" title="{{ contact.notes }}">{{ contact.notes|truncatechars:65 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="contact-card-actions">
+                                    <!-- Copy Button -->
+                                    <button type="button" class="btn-card-action btn-copy-phone" title="Copy Phone" data-phone="{{ contact.phone }}">
+                                        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        </svg>
+                                        <span class="action-text copy-text">Copy</span>
+                                    </button>
+
+                                    <!-- vCard Export for Mobile (Epic 4) -->
+                                    <a href="{% url 'contact_export_vcard' contact.id %}" class="btn-card-action" title="Download .vcf for iPhone / Android">
+                                        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                                            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                                        </svg>
+                                        <span class="action-text">vCard</span>
+                                    </a>
+
+                                    <!-- Quick Details Drawer Trigger (Epic 3) -->
+                                    <button type="button" class="btn-card-action btn-view-details" title="View Full Details"
+                                            data-id="{{ contact.id }}"
+                                            data-name="{{ contact.name }}"
+                                            data-phone="{{ contact.phone }}"
+                                            data-email="{{ contact.email|default:'N/A' }}"
+                                            data-category="{{ contact.get_category_display }}"
+                                            data-notes="{{ contact.notes|default:'None' }}"
+                                            data-created="{% if contact.created_at %}{{ contact.created_at|date:'M d, Y H:i' }}{% else %}N/A{% endif %}"
+                                            data-favorite="{% if contact.is_favorite %}Yes ⭐{% else %}No{% endif %}">
+                                        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                        <span class="action-text">Details</span>
+                                    </button>
+
+                                    <!-- Edit Button (Quick Modal trigger) -->
+                                    <button type="button" class="btn-card-action btn-edit-contact" title="Edit Contact"
+                                            data-id="{{ contact.id }}"
+                                            data-name="{{ contact.name }}"
+                                            data-phone="{{ contact.phone }}"
+                                            data-email="{{ contact.email }}"
+                                            data-category="{{ contact.category }}"
+                                            data-notes="{{ contact.notes }}"
+                                            data-favorite="{% if contact.is_favorite %}true{% else %}false{% endif %}"
+                                            data-update-url="{% url 'contact_update' contact.id %}">
+                                        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 2 2h14a2 2 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
+                                        <span class="action-text">Edit</span>
+                                    </button>
+
+                                    <!-- Delete Button (Confirmation modal trigger) -->
+                                    <button type="button" class="btn-card-action btn-delete-contact" title="Delete Contact"
+                                            data-id="{{ contact.id }}"
+                                            data-name="{{ contact.name }}"
+                                            data-delete-url="{% url 'contact_delete' contact.id %}">
+                                        <svg class="action-icon danger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                        <span class="action-text danger-text">Delete</span>
+                                    </button>
+                                </div>
+                            </article>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Pagination Navigation Bar (Epic 3) -->
+                        {% if page_obj.paginator.num_pages > 1 %}
+                        <nav class="pagination-container" aria-label="Contacts Pagination">
+                            <div class="pagination-info">
+                                Page <strong>{{ page_obj.number }}</strong> of <strong>{{ page_obj.paginator.num_pages }}</strong>
+                                ({{ page_obj.paginator.count }} contacts total)
+                            </div>
+
+                            <div class="pagination-controls">
+                                {% if page_obj.has_previous %}
+                                <a href="?page={{ page_obj.previous_page_number }}{% if active_tab %}&tab={{ active_tab }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if sort_order %}&sort={{ sort_order }}{% endif %}" 
+                                   class="btn-pagination">
+                                    &larr; Previous
+                                </a>
+                                {% endif %}
+
+                                <span class="pagination-current-pill">{{ page_obj.number }}</span>
+
+                                {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}{% if active_tab %}&tab={{ active_tab }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if sort_order %}&sort={{ sort_order }}{% endif %}" 
+                                   class="btn-pagination">
+                                    Next &rarr;
+                                </a>
+                                {% endif %}
+                            </div>
+                        </nav>
+                        {% endif %}
+
+                        <!-- No Search Match Fallback (Hidden by default) -->
+                        <div class="empty-state" id="no-search-results" style="display: none;">
+                            <div class="empty-icon-bubble">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </div>
+                            <h3 class="empty-title">No matching contacts</h3>
+                            <p class="empty-desc">Try clearing search filters or selecting All Groups</p>
+                        </div>
+                    {% else %}
+                        <!-- Empty State when 0 contacts exist -->
+                        <div class="empty-state" id="empty-state-card">
+                            <div class="empty-icon-bubble">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                            </div>
+                            <h3 class="empty-title">
+                                {% if active_tab == 'favorites' %}
+                                No favorite contacts yet
+                                {% elif selected_category %}
+                                No contacts found in this category
+                                {% else %}
+                                No contacts saved yet
+                                {% endif %}
+                            </h3>
+                            <p class="empty-desc">
+                                Use the form on the left or upload a CSV file to populate your contact book.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Contact Book &bull; Epic 3 Enterprise Baseline &bull; Django MVT, REST API &amp; Glassmorphism UX</p>
+        </footer>
+    </div>
+
+    <!-- =========================================================================
+         EPIC 3 MODALS: EDIT, DELETE, DETAILS, IMPORT CSV & API EXPLORER
+         ========================================================================= -->
+
+    <!-- 1. Quick Edit Modal -->
+    <div class="modal-overlay" id="edit-modal" aria-hidden="true" role="dialog" aria-labelledby="edit-modal-title">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="edit-modal-title">Edit Contact</h3>
+                    <p class="modal-subtitle">Update contact details, group, and notes</p>
+                </div>
+                <button type="button" class="modal-close-btn" id="close-edit-modal-btn" aria-label="Close dialog">&times;</button>
+            </div>
+
+            <form method="POST" action="" id="quick-edit-form" class="modal-form" novalidate>
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="modal-input-name" class="form-label">Full Name <span class="required-indicator">*</span></label>
+                    <input type="text" name="name" id="modal-input-name" class="form-input" required maxlength="100">
+                </div>
+
+                <div class="form-group">
+                    <label for="modal-input-phone" class="form-label">Phone Number <span class="required-indicator">*</span></label>
+                    <input type="text" name="phone" id="modal-input-phone" class="form-input" required maxlength="20">
+                </div>
+
+                <div class="form-group">
+                    <label for="modal-input-email" class="form-label">Email Address</label>
+                    <input type="email" name="email" id="modal-input-email" class="form-input" maxlength="100">
+                </div>
+
+                <div class="form-group">
+                    <label for="modal-input-category" class="form-label">Category / Group</label>
+                    <select name="category" id="modal-input-category" class="form-input form-select">
+                        {% for cat_key, cat_name in categories %}
+                        <option value="{{ cat_key }}">{{ cat_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="modal-input-notes" class="form-label">Notes & Details</label>
+                    <textarea name="notes" id="modal-input-notes" class="form-input form-textarea" rows="2"></textarea>
+                </div>
+
+                <div class="form-group form-checkbox-group">
+                    <label for="modal-input-favorite" class="checkbox-label">
+                        <input type="checkbox" name="is_favorite" id="modal-input-favorite" class="form-checkbox">
+                        <span>Mark as Favorite ⭐</span>
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Delete Confirmation Modal -->
+    <div class="modal-overlay" id="delete-modal" aria-hidden="true" role="dialog" aria-labelledby="delete-modal-title">
+        <div class="modal-card modal-card-sm">
+            <div class="delete-icon-wrapper modal-delete-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+            </div>
+            <h3 class="modal-title text-center" id="delete-modal-title">Delete Contact</h3>
+            <p class="modal-subtitle text-center" id="delete-modal-message">
+                Are you sure you want to permanently delete this contact?
+            </p>
+
+            <form method="POST" action="" id="quick-delete-form" class="modal-delete-form">
+                {% csrf_token %}
+                <div class="modal-actions full-width">
+                    <button type="button" class="btn btn-secondary" id="cancel-delete-btn">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Contact Full Details Modal (Epic 3) -->
+    <div class="modal-overlay" id="details-modal" aria-hidden="true" role="dialog" aria-labelledby="details-modal-title">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="details-modal-title">Contact Card</h3>
+                    <p class="modal-subtitle">Complete contact profile &amp; metadata</p>
+                </div>
+                <button type="button" class="modal-close-btn" id="close-details-modal-btn" aria-label="Close dialog">&times;</button>
+            </div>
+
+            <div class="contact-details-body">
+                <div class="detail-row">
+                    <span class="detail-label">Full Name:</span>
+                    <strong class="detail-value" id="detail-name">-</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Phone:</span>
+                    <span class="detail-value font-mono" id="detail-phone">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value" id="detail-email">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Group:</span>
+                    <span class="detail-value badge-category" id="detail-category">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Favorite:</span>
+                    <span class="detail-value" id="detail-favorite">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Added on:</span>
+                    <span class="detail-value" id="detail-created">-</span>
+                </div>
+                <div class="detail-row notes-detail-row">
+                    <span class="detail-label">Notes:</span>
+                    <p class="detail-value detail-notes-box" id="detail-notes">-</p>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="close-details-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. CSV Bulk Import Modal (Epic 3) -->
+    <div class="modal-overlay" id="import-modal" aria-hidden="true" role="dialog" aria-labelledby="import-modal-title">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="import-modal-title">Bulk Import Contacts</h3>
+                    <p class="modal-subtitle">Upload CSV file to import multiple contacts</p>
+                </div>
+                <button type="button" class="modal-close-btn" id="close-import-modal-btn" aria-label="Close dialog">&times;</button>
+            </div>
+
+            <form method="POST" action="{% url 'contact_import_csv' %}" enctype="multipart/form-data" class="modal-form">
+                {% csrf_token %}
+                <div class="import-instructions">
+                    <p>Format supported: <code>Name, Phone, Email, Category, Notes, Favorite</code></p>
+                    <a href="{% url 'contact_download_sample_csv' %}" class="sample-csv-link">
+                        📥 Download Sample Template (.csv)
+                    </a>
+                </div>
+
+                <div class="form-group dropzone-wrapper">
+                    <label for="id_csv_file" class="dropzone-label">
+                        <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>Choose a .CSV file or drag it here</span>
+                        <input type="file" name="csv_file" id="id_csv_file" accept=".csv,text/csv" required class="file-input-hidden">
+                    </label>
+                    <span class="file-chosen-name" id="chosen-file-display">No file selected</span>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-import-btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Start Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. REST API Explorer Modal (Epic 3) -->
+    <div class="modal-overlay" id="api-modal" aria-hidden="true" role="dialog" aria-labelledby="api-modal-title">
+        <div class="modal-card modal-card-lg">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="api-modal-title">Contact Book REST API</h3>
+                    <p class="modal-subtitle">Full programmatic JSON access for external clients</p>
+                </div>
+                <button type="button" class="modal-close-btn" id="close-api-modal-btn" aria-label="Close dialog">&times;</button>
+            </div>
+
+            <div class="api-endpoints-list">
+                <div class="api-item">
+                    <div class="api-item-header">
+                        <span class="http-badge get-badge">GET</span>
+                        <code>/api/contacts/</code>
+                    </div>
+                    <p class="api-desc">List contacts with optional query params: <code>?q=...</code>, <code>?category=...</code>, <code>?favorites=1</code></p>
+                </div>
+
+                <div class="api-item">
+                    <div class="api-item-header">
+                        <span class="http-badge post-badge">POST</span>
+                        <code>/api/contacts/</code>
+                    </div>
+                    <p class="api-desc">Create new contact with JSON payload: <code>{"name": "...", "phone": "...", "email": "...", "category": "work"}</code></p>
+                </div>
+
+                <div class="api-item">
+                    <div class="api-item-header">
+                        <span class="http-badge get-badge">GET</span>
+                        <code>/api/contacts/&lt;id&gt;/</code>
+                    </div>
+                    <p class="api-desc">Retrieve single contact entity by ID.</p>
+                </div>
+
+                <div class="api-item">
+                    <div class="api-item-header">
+                        <span class="http-badge put-badge">PUT / PATCH</span>
+                        <code>/api/contacts/&lt;id&gt;/</code>
+                    </div>
+                    <p class="api-desc">Update contact fields with JSON payload.</p>
+                </div>
+
+                <div class="api-item">
+                    <div class="api-item-header">
+                        <span class="http-badge delete-badge">DELETE</span>
+                        <code>/api/contacts/&lt;id&gt;/</code>
+                    </div>
+                    <p class="api-desc">Permanently remove contact by ID.</p>
+                </div>
+
+                <div class="api-item">
+                    <div class="api-item-header">
+                        <span class="http-badge get-badge">GET</span>
+                        <code>/api/contacts/stats/</code>
+                    </div>
+                    <p class="api-desc">Get aggregated stats (totals, favorites, category breakdown).</p>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <a href="/api/contacts/" target="_blank" class="btn btn-secondary">Open /api/contacts/ JSON</a>
+                <button type="button" class="btn btn-primary" id="close-api-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Client Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme Switcher (Dark / Light) with LocalStorage
+            const themeToggleBtn = document.getElementById('theme-toggle-btn');
+            const savedTheme = localStorage.getItem('cb_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', next);
+                    localStorage.setItem('cb_theme', next);
+                });
+            }
+
+            // Live Search Filter
+            const searchInput = document.getElementById('contact-search-input');
+            const clearBtn = document.getElementById('clear-search-btn');
+            const cards = document.querySelectorAll('.contact-card');
+            const noResults = document.getElementById('no-search-results');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.trim().toLowerCase();
+                    let visibleCount = 0;
+
+                    if (query.length > 0) {
+                        clearBtn.style.display = 'inline-block';
+                    } else {
+                        clearBtn.style.display = 'none';
+                    }
+
+                    cards.forEach(card => {
+                        const name = card.getAttribute('data-name') || '';
+                        const phone = card.getAttribute('data-phone') || '';
+                        const email = card.getAttribute('data-email') || '';
+                        const notes = card.getAttribute('data-notes') || '';
+                        if (name.includes(query) || phone.includes(query) || email.includes(query) || notes.includes(query)) {
+                            card.style.display = '';
+                            visibleCount++;
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+
+                    if (noResults) {
+                        noResults.style.display = (visibleCount === 0 && cards.length > 0) ? 'flex' : 'none';
+                    }
+                });
+
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', () => {
+                        searchInput.value = '';
+                        searchInput.dispatchEvent(new Event('input'));
+                        searchInput.focus();
+                    });
+                }
+            }
+
+            // Bulk Actions Management
+            const selectAllCb = document.getElementById('select-all-contacts');
+            const contactCbs = document.querySelectorAll('.contact-select-cb');
+            const bulkBar = document.getElementById('bulk-action-form');
+            const bulkCountBadge = document.getElementById('bulk-selected-count');
+
+            const updateBulkBar = () => {
+                const selected = document.querySelectorAll('.contact-select-cb:checked');
+                const count = selected.length;
+                if (count > 0) {
+                    bulkBar.style.display = 'block';
+                    bulkCountBadge.textContent = count;
+                } else {
+                    bulkBar.style.display = 'none';
+                }
+            };
+
+            if (selectAllCb) {
+                selectAllCb.addEventListener('change', (e) => {
+                    contactCbs.forEach(cb => {
+                        if (cb.closest('.contact-card').style.display !== 'none') {
+                            cb.checked = e.target.checked;
+                        }
+                    });
+                    updateBulkBar();
+                });
+            }
+
+            contactCbs.forEach(cb => cb.addEventListener('change', updateBulkBar));
+
+            // Copy to Clipboard
+            const copyButtons = document.querySelectorAll('.btn-copy-phone');
+            copyButtons.forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const phone = btn.getAttribute('data-phone');
+                    try {
+                        await navigator.clipboard.writeText(phone);
+                        const copyText = btn.querySelector('.copy-text');
+                        const originalText = copyText.textContent;
+                        copyText.textContent = 'Copied!';
+                        btn.classList.add('copied');
+                        setTimeout(() => {
+                            copyText.textContent = originalText;
+                            btn.classList.remove('copied');
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Failed to copy', err);
+                    }
+                });
+            });
+
+            // Modal Helper Functions
+            const openModal = (modal) => {
+                if (!modal) return;
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+            };
+
+            const closeModal = (modal) => {
+                if (!modal) return;
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            };
+
+            // 1. Edit Modal Handlers
+            const editModal = document.getElementById('edit-modal');
+            const editForm = document.getElementById('quick-edit-form');
+            document.querySelectorAll('.btn-edit-contact').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.getElementById('modal-input-name').value = btn.getAttribute('data-name');
+                    document.getElementById('modal-input-phone').value = btn.getAttribute('data-phone');
+                    document.getElementById('modal-input-email').value = btn.getAttribute('data-email') || '';
+                    document.getElementById('modal-input-category').value = btn.getAttribute('data-category') || 'personal';
+                    document.getElementById('modal-input-notes').value = btn.getAttribute('data-notes') || '';
+                    document.getElementById('modal-input-favorite').checked = btn.getAttribute('data-favorite') === 'true';
+                    editForm.action = btn.getAttribute('data-update-url');
+                    openModal(editModal);
+                });
+            });
+            document.getElementById('close-edit-modal-btn')?.addEventListener('click', () => closeModal(editModal));
+            document.getElementById('cancel-edit-btn')?.addEventListener('click', () => closeModal(editModal));
+
+            // 2. Delete Modal Handlers
+            const deleteModal = document.getElementById('delete-modal');
+            const deleteForm = document.getElementById('quick-delete-form');
+            document.querySelectorAll('.btn-delete-contact').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const name = btn.getAttribute('data-name');
+                    document.getElementById('delete-modal-message').innerHTML = `Are you sure you want to permanently delete <strong>"${name}"</strong>?`;
+                    deleteForm.action = btn.getAttribute('data-delete-url');
+                    openModal(deleteModal);
+                });
+            });
+            document.getElementById('cancel-delete-btn')?.addEventListener('click', () => closeModal(deleteModal));
+
+            // 3. Details Modal Handlers
+            const detailsModal = document.getElementById('details-modal');
+            document.querySelectorAll('.btn-view-details').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.getElementById('detail-name').textContent = btn.getAttribute('data-name');
+                    document.getElementById('detail-phone').textContent = btn.getAttribute('data-phone');
+                    document.getElementById('detail-email').textContent = btn.getAttribute('data-email');
+                    document.getElementById('detail-category').textContent = btn.getAttribute('data-category');
+                    document.getElementById('detail-favorite').textContent = btn.getAttribute('data-favorite');
+                    document.getElementById('detail-created').textContent = btn.getAttribute('data-created');
+                    document.getElementById('detail-notes').textContent = btn.getAttribute('data-notes');
+                    openModal(detailsModal);
+                });
+            });
+            document.getElementById('close-details-modal-btn')?.addEventListener('click', () => closeModal(detailsModal));
+            document.getElementById('close-details-btn')?.addEventListener('click', () => closeModal(detailsModal));
+
+            // 4. Import Modal Handlers
+            const importModal = document.getElementById('import-modal');
+            document.getElementById('open-import-modal-btn')?.addEventListener('click', () => openModal(importModal));
+            document.getElementById('close-import-modal-btn')?.addEventListener('click', () => closeModal(importModal));
+            document.getElementById('cancel-import-btn')?.addEventListener('click', () => closeModal(importModal));
+
+            const fileInput = document.getElementById('id_csv_file');
+            const fileDisplay = document.getElementById('chosen-file-display');
+            if (fileInput && fileDisplay) {
+                fileInput.addEventListener('change', () => {
+                    fileDisplay.textContent = fileInput.files.length ? fileInput.files[0].name : 'No file selected';
+                });
+            }
+
+            // 5. API Modal Handlers
+            const apiModal = document.getElementById('api-modal');
+            document.getElementById('open-api-modal-btn')?.addEventListener('click', () => openModal(apiModal));
+            document.getElementById('close-api-modal-btn')?.addEventListener('click', () => closeModal(apiModal));
+            document.getElementById('close-api-btn')?.addEventListener('click', () => closeModal(apiModal));
+
+            // Close modals on Escape key or outside click
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    [editModal, deleteModal, detailsModal, importModal, apiModal].forEach(closeModal);
+                }
+            });
+
+            [editModal, deleteModal, detailsModal, importModal, apiModal].forEach(modal => {
+                if (modal) {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) closeModal(modal);
+                    });
+                }
+            });
+
+            // Auto-dismiss alerts after 5 seconds
+            document.querySelectorAll('.alert').forEach(alert => {
+                setTimeout(() => {
+                    alert.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                    alert.style.opacity = '0';
+                    alert.style.transform = 'translateY(-10px)';
+                    setTimeout(() => alert.remove(), 400);
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html>
